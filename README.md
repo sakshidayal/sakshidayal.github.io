@@ -1,12 +1,14 @@
 # Sakshi Dayal — Portfolio
 
-Personal portfolio site: about, experience, education, skills, and projects.
+A comic-book-styled personal portfolio: origin story, career "chapters,"
+school arcs, power-ups (skills), and side-quest issues (projects).
 
-Built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/), based on the open-source [developer-portfolio](https://github.com/said7388/developer-portfolio) template.
+Plain HTML/CSS/JS, no build step, no framework. Hosted free on GitHub Pages.
 
 ## Running locally
 
+Just open `index.html` in a browser, or serve the folder:
+
 ```bash
-npm install
-npm run dev
+python -m http.server 8000
 ```
