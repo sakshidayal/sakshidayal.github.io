@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sakshi Dayal — Software Developer</title>
-<meta name="description" content="Sakshi Dayal: software developer working on CAD geometry, 3D visualization, and applied ML. A comic-book-styled portfolio.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💥</text></svg>">
+<meta name="description" content="Sakshi Dayal: software developer working on CAD geometry, 3D visualization, and applied ML. A graphic-novel-styled portfolio.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23121110%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23c81e3a%22/></svg>">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <nav class="navbar">
   <div class="wrap">
-    <a href="#top" class="brand">SD!</a>
+    <a href="#top" class="brand">SAKSHI<span>.</span></a>
     <ul class="navlinks">
       <li><a href="#about">ABOUT</a></li>
       <li><a href="#experience">EXPERIENCE</a></li>
@@ -25,36 +25,45 @@
 </nav>
 
 <header id="top" class="hero wrap">
-  <svg class="starburst" viewBox="0 0 200 200" aria-hidden="true">
-    <polygon points="100,0 120,70 195,70 135,110 155,190 100,145 45,190 65,110 5,70 80,70"
-      fill="#ffd400" stroke="#14110f" stroke-width="4" />
+  <svg class="halftone-burst" viewBox="0 0 200 200" aria-hidden="true">
+    <defs>
+      <radialGradient id="dotfade" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#c81e3a" stop-opacity="0.9"/>
+        <stop offset="100%" stop-color="#c81e3a" stop-opacity="0"/>
+      </radialGradient>
+      <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="2" fill="#c81e3a"/>
+      </pattern>
+    </defs>
+    <circle cx="100" cy="100" r="95" fill="url(#dotfade)"/>
+    <circle cx="100" cy="100" r="95" fill="url(#dots)"/>
   </svg>
   <div class="hero-grid">
     <div>
       <p class="kicker">TRUE STORY. MOSTLY.</p>
       <h1>SAKSHI<br>DAYAL</h1>
       <p class="sub">SOFTWARE DEVELOPER &middot; CAD WIZARD &middot; ALGORITHM ENTHUSIAST</p>
-      <div class="speech-bubble">
+      <div class="caption-box">
         From rockets to robots to render pipelines — I build the stuff other
         engineers assume "just works." Currently teaching computers to draw
         lines without lying about which one's in front.
       </div>
       <div class="cta-row">
         <a class="btn btn-red" href="#projects">SEE MY WORK →</a>
-        <a class="btn btn-blue" href="#contact">TEAM UP 🤝</a>
+        <a class="btn btn-blue" href="#contact">TEAM UP</a>
       </div>
     </div>
     <div class="badge-card">
       <div class="panel">
-        <p class="kicker" style="background:var(--blue)">STAT CARD</p>
-        <h3 style="font-size:1.6rem;">THE ENGINEER</h3>
+        <p class="kicker">FILE 001</p>
+        <h3>THE ENGINEER</h3>
         <p style="margin-top:10px;">
           Aerospace-trained. Software-employed. Builds tiny algorithm
           visualizers for fun on weekends, which is either a hobby or a cry
           for help. Jury's still out.
         </p>
-        <p style="margin-top:10px;">📍 Currently: Dassault Systèmes SolidWorks</p>
-        <p>🎓 IIT Bombay &rarr; University of Michigan</p>
+        <p style="margin-top:10px;">Currently: Dassault Systèmes SolidWorks</p>
+        <p>IIT Bombay &rarr; University of Michigan</p>
       </div>
     </div>
   </div>
@@ -90,7 +99,7 @@
 
 <section id="experience">
   <div class="wrap reveal">
-    <p class="kicker">THE COMIC STRIP</p>
+    <p class="kicker">CASE FILE</p>
     <h2 class="section-title">CAREER, IN CHAPTERS</h2>
     <div class="strip">
 
@@ -181,7 +190,7 @@
 
 <section id="skills">
   <div class="wrap reveal">
-    <p class="kicker">POWER-UPS</p>
+    <p class="kicker">ARSENAL</p>
     <h2 class="section-title">TOOLS OF THE TRADE</h2>
     <div class="panel">
       <div class="skills-wrap">
@@ -207,8 +216,8 @@
 
 <section id="projects">
   <div class="wrap reveal">
-    <p class="kicker">NOW ON SALE</p>
-    <h2 class="section-title">SIDE-QUEST ISSUES</h2>
+    <p class="kicker">ARCHIVE</p>
+    <h2 class="section-title">SELECTED ISSUES</h2>
     <div class="projects-grid">
 
       <div class="cover">
@@ -221,7 +230,7 @@
           <div class="tools-row">
             <span class="tool-tag">JavaScript</span><span class="tool-tag">HTML</span><span class="tool-tag">CSS</span><span class="tool-tag">SVG</span>
           </div>
-          <a class="btn btn-yellow" href="https://github.com/sakshidayal/codealgos" target="_blank" rel="noopener">CODE ⚡</a>
+          <a class="btn btn-yellow" href="https://github.com/sakshidayal/codealgos" target="_blank" rel="noopener">CODE</a>
         </div>
       </div>
 
@@ -235,7 +244,7 @@
           <div class="tools-row">
             <span class="tool-tag">Three.js</span><span class="tool-tag">JavaScript</span><span class="tool-tag">WebGL</span>
           </div>
-          <a class="btn btn-yellow" href="https://github.com/sakshidayal/pathAlgos" target="_blank" rel="noopener">CODE ⚡</a>
+          <a class="btn btn-yellow" href="https://github.com/sakshidayal/pathAlgos" target="_blank" rel="noopener">CODE</a>
         </div>
       </div>
 
@@ -249,7 +258,7 @@
           <div class="tools-row">
             <span class="tool-tag">Python</span><span class="tool-tag">Streamlit</span><span class="tool-tag">OpenCV</span><span class="tool-tag">PyTorch</span>
           </div>
-          <a class="btn btn-yellow" href="https://github.com/sakshidayal/CValgos" target="_blank" rel="noopener">CODE ⚡</a>
+          <a class="btn btn-yellow" href="https://github.com/sakshidayal/CValgos" target="_blank" rel="noopener">CODE</a>
         </div>
       </div>
 
@@ -262,7 +271,7 @@
           <div class="tools-row">
             <span class="tool-tag">React</span><span class="tool-tag">TypeScript</span><span class="tool-tag">Vite</span>
           </div>
-          <a class="btn btn-yellow" href="https://github.com/sakshidayal/gitGenerator" target="_blank" rel="noopener">CODE ⚡</a>
+          <a class="btn btn-yellow" href="https://github.com/sakshidayal/gitGenerator" target="_blank" rel="noopener">CODE</a>
         </div>
       </div>
 
@@ -315,13 +324,13 @@
 <section id="contact">
   <div class="wrap reveal">
     <div class="panel contact-panel">
-      <p class="kicker" style="background:var(--red)">TO BE CONTINUED...</p>
+      <p class="kicker">TO BE CONTINUED...</p>
       <h2 class="section-title">WANT TO TEAM UP?</h2>
       <p>No sidekick auditions required — just say hi.</p>
       <div class="contact-links">
-        <a class="btn btn-red" href="mailto:sdayal@umich.edu">✉️ EMAIL</a>
-        <a class="btn btn-blue" href="https://www.linkedin.com/in/sakshi1998dayal" target="_blank" rel="noopener">💼 LINKEDIN</a>
-        <a class="btn btn-yellow" href="https://github.com/sakshidayal" target="_blank" rel="noopener">🐙 GITHUB</a>
+        <a class="btn btn-red" href="mailto:sdayal@umich.edu">EMAIL</a>
+        <a class="btn btn-blue" href="https://www.linkedin.com/in/sakshi1998dayal" target="_blank" rel="noopener">LINKEDIN</a>
+        <a class="btn btn-yellow" href="https://github.com/sakshidayal" target="_blank" rel="noopener">GITHUB</a>
       </div>
     </div>
   </div>
