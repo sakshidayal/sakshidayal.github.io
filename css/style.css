@@ -54,14 +54,37 @@ p:last-child { margin-bottom: 0; }
   position: relative;
 }
 
-/* ---------- CLOUDS ---------- */
-.cloud-layer {
-  position: absolute;
+main, .hero, footer { position: relative; z-index: 1; }
+
+/* ---------- PERSISTENT NATURE BACKGROUND ---------- */
+/* Fixed to the viewport (not the document), z-index:-1 so it can never
+   sit above readable content regardless of scroll position or DOM order. */
+.nature-bg {
+  position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
 }
+.hills {
+  position: absolute;
+  left: -10%;
+  bottom: -60px;
+  width: 60%;
+  height: 160px;
+  background: var(--mint);
+  border-radius: 50%;
+  opacity: .55;
+}
+.hills.back {
+  left: 35%;
+  bottom: -90px;
+  width: 70%;
+  height: 200px;
+  background: var(--lav);
+  opacity: .35;
+}
+
 .cloud {
   position: absolute;
   background: var(--cloud);
@@ -79,9 +102,29 @@ p:last-child { margin-bottom: 0; }
 .cloud::before { width: 55%; height: 140%; top: -60%; left: 8%; }
 .cloud::after { width: 40%; height: 110%; top: -45%; right: 12%; }
 
+.bird {
+  position: absolute;
+  opacity: 0;
+  animation: fly linear infinite;
+}
+.bird svg { display: block; animation: flap 0.7s ease-in-out infinite; }
+
 @keyframes drift {
   from { transform: translateX(-15vw); }
   to { transform: translateX(115vw); }
+}
+
+@keyframes fly {
+  0% { transform: translateX(-10vw) translateY(0); opacity: 0; }
+  4% { opacity: .55; }
+  50% { transform: translateX(55vw) translateY(-18px); }
+  96% { opacity: .55; }
+  100% { transform: translateX(115vw) translateY(6px); opacity: 0; }
+}
+
+@keyframes flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(.55); }
 }
 
 @keyframes bob {
@@ -92,31 +135,6 @@ p:last-child { margin-bottom: 0; }
 @keyframes sway {
   0%, 100% { transform: rotate(-2deg); }
   50% { transform: rotate(2deg); }
-}
-
-@keyframes petal-fall {
-  0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
-  10% { opacity: .9; }
-  100% { transform: translateY(110vh) translateX(40px) rotate(220deg); opacity: 0; }
-}
-.petals {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 1;
-}
-.petal {
-  position: absolute;
-  top: 0;
-  width: 12px;
-  height: 12px;
-  background: var(--pink-dark);
-  border-radius: 60% 0 60% 0;
-  opacity: .8;
-  animation-name: petal-fall;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
 }
 
 /* ---------- MUSIC TOGGLE ---------- */

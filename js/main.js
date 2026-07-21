@@ -12,43 +12,54 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.15 });
 revealTargets.forEach((el) => observer.observe(el));
 
-// ---------- falling petals ----------
-const petalLayer = document.getElementById('petals');
-const PETAL_COUNT = 14;
-for (let i = 0; i < PETAL_COUNT; i++) {
-  const petal = document.createElement('div');
-  petal.className = 'petal';
-  const size = 8 + Math.random() * 10;
-  petal.style.width = `${size}px`;
-  petal.style.height = `${size}px`;
-  petal.style.left = `${Math.random() * 100}vw`;
-  petal.style.background = ['#f4c6d0', '#bfe3cc', '#d9cdf0', '#fbe3ad'][i % 4];
-  const duration = 14 + Math.random() * 16;
-  petal.style.animationDuration = `${duration}s`;
-  petal.style.animationDelay = `${-Math.random() * duration}s`;
-  petalLayer.appendChild(petal);
+// ---------- persistent background: clouds + birds ----------
+// Fixed to the viewport (see .nature-bg, z-index:-1) so this scenery is
+// always present behind whatever section you're reading, never on top of it.
+const natureBg = document.getElementById('natureBg');
+
+const CLOUD_COUNT = 7;
+for (let i = 0; i < CLOUD_COUNT; i++) {
+  const cloud = document.createElement('div');
+  cloud.className = 'cloud';
+  const w = 70 + Math.random() * 90;
+  const h = w * 0.36;
+  cloud.style.width = `${w}px`;
+  cloud.style.height = `${h}px`;
+  cloud.style.top = `${5 + Math.random() * 70}%`;
+  const duration = 50 + Math.random() * 50;
+  cloud.style.animationDuration = `${duration}s`;
+  cloud.style.animationDelay = `${-Math.random() * duration}s`;
+  natureBg.appendChild(cloud);
 }
 
-// ---------- ambient generative soundscape ----------
+const birdSvg = `<svg width="26" height="14" viewBox="0 0 26 14"><path d="M0 7 Q6 -3 13 6 Q20 -3 26 7 Q20 3 13 8 Q6 3 0 7Z" fill="#8a7f96" opacity="0.6"/></svg>`;
+const BIRD_COUNT = 3;
+for (let i = 0; i < BIRD_COUNT; i++) {
+  const bird = document.createElement('div');
+  bird.className = 'bird';
+  bird.innerHTML = birdSvg;
+  bird.style.top = `${8 + Math.random() * 35}%`;
+  const duration = 22 + Math.random() * 14;
+  bird.style.animationDuration = `${duration}s`;
+  bird.style.animationDelay = `${Math.random() * 40}s`;
+  natureBg.appendChild(bird);
+}
+
+// ---------- ambient nature soundscape: soft breeze + birdsong ----------
 let audioCtx = null;
 let ambientNodes = null;
-let chimeTimer = null;
+let chirpTimer = null;
 let playing = false;
 
 const toggleBtn = document.getElementById('musicToggle');
 const icon = document.getElementById('musicIcon');
 
-function buildReverbImpulse(ctx, seconds = 3, decay = 3) {
-  const rate = ctx.sampleRate;
-  const length = rate * seconds;
-  const impulse = ctx.createBuffer(2, length, rate);
-  for (let ch = 0; ch < 2; ch++) {
-    const data = impulse.getChannelData(ch);
-    for (let i = 0; i < length; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
-    }
-  }
-  return impulse;
+function buildNoiseBuffer(ctx) {
+  const length = ctx.sampleRate * 2;
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  return buffer;
 }
 
 function startAmbient() {
@@ -58,85 +69,80 @@ function startAmbient() {
   const master = ctx.createGain();
   master.gain.value = 0;
   master.connect(ctx.destination);
-  master.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 2.5);
+  master.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 2);
 
-  const reverb = ctx.createConvolver();
-  reverb.buffer = buildReverbImpulse(ctx);
-  const reverbGain = ctx.createGain();
-  reverbGain.gain.value = 0.5;
-  reverb.connect(reverbGain);
-  reverbGain.connect(master);
+  // soft breeze: filtered noise loop, gently wandering
+  const noise = ctx.createBufferSource();
+  noise.buffer = buildNoiseBuffer(ctx);
+  noise.loop = true;
+  const breezeFilter = ctx.createBiquadFilter();
+  breezeFilter.type = 'bandpass';
+  breezeFilter.frequency.value = 700;
+  breezeFilter.Q.value = 0.6;
+  const breezeLfo = ctx.createOscillator();
+  breezeLfo.frequency.value = 0.06;
+  const breezeLfoGain = ctx.createGain();
+  breezeLfoGain.gain.value = 260;
+  breezeLfo.connect(breezeLfoGain);
+  breezeLfoGain.connect(breezeFilter.frequency);
+  const breezeGain = ctx.createGain();
+  breezeGain.gain.value = 0.35;
+  noise.connect(breezeFilter);
+  breezeFilter.connect(breezeGain);
+  breezeGain.connect(master);
+  noise.start();
+  breezeLfo.start();
 
-  const dry = ctx.createGain();
-  dry.gain.value = 0.5;
-  dry.connect(master);
+  const chirpBus = ctx.createGain();
+  chirpBus.gain.value = 1;
+  chirpBus.connect(master);
 
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 900;
-  filter.connect(dry);
-  filter.connect(reverb);
+  ambientNodes = { master, noise, breezeLfo, chirpBus };
 
-  // soft detuned pad, pentatonic-ish stack
-  const freqs = [196.0, 246.94, 293.66, 392.0];
-  const oscillators = freqs.map((f, i) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = f;
-    const gain = ctx.createGain();
-    gain.gain.value = 0.05;
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.05 + i * 0.02;
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = f * 0.003;
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-    osc.connect(gain);
-    gain.connect(filter);
-    osc.start();
-    lfo.start();
-    return { osc, lfo, gain };
-  });
-
-  ambientNodes = { master, oscillators, reverb, filter };
-
-  // occasional soft chime plinks, pentatonic scale
-  const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5];
-  function chime() {
-    const now = ctx.currentTime;
-    const note = scale[Math.floor(Math.random() * scale.length)];
-    const osc = ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = note;
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.05, now + 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
-    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    osc.connect(gain);
-    if (pan) {
-      pan.pan.value = Math.random() * 1.6 - 0.8;
-      gain.connect(pan);
-      pan.connect(reverb);
-    } else {
-      gain.connect(reverb);
+  function chirp() {
+    const now = audioCtx.currentTime;
+    const base = 2400 + Math.random() * 1400;
+    const notes = 1 + Math.floor(Math.random() * 3);
+    let t = now;
+    for (let n = 0; n < notes; n++) {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      const gain = audioCtx.createGain();
+      const pan = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+      const freq = base * (1 + (Math.random() - 0.5) * 0.3);
+      osc.frequency.setValueAtTime(freq * 0.7, t);
+      osc.frequency.exponentialRampToValueAtTime(freq, t + 0.05);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.85, t + 0.13);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.06, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      osc.connect(gain);
+      if (pan) {
+        pan.pan.value = Math.random() * 1.6 - 0.8;
+        gain.connect(pan);
+        pan.connect(chirpBus);
+      } else {
+        gain.connect(chirpBus);
+      }
+      osc.start(t);
+      osc.stop(t + 0.2);
+      t += 0.14 + Math.random() * 0.08;
     }
-    osc.start(now);
-    osc.stop(now + 2.5);
-    chimeTimer = setTimeout(chime, 3000 + Math.random() * 5000);
+    chirpTimer = setTimeout(chirp, 2500 + Math.random() * 5500);
   }
-  chimeTimer = setTimeout(chime, 1500);
+  chirpTimer = setTimeout(chirp, 1200);
 }
 
 function stopAmbient() {
   if (!audioCtx || !ambientNodes) return;
   const ctx = audioCtx;
-  const { master, oscillators } = ambientNodes;
-  master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.2);
-  clearTimeout(chimeTimer);
+  const { master, noise, breezeLfo } = ambientNodes;
+  master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+  clearTimeout(chirpTimer);
   setTimeout(() => {
-    oscillators.forEach(({ osc, lfo }) => { osc.stop(); lfo.stop(); });
-  }, 1300);
+    noise.stop();
+    breezeLfo.stop();
+  }, 1100);
   ambientNodes = null;
 }
 
