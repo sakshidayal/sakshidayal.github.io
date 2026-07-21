@@ -32,34 +32,67 @@ for (let i = 0; i < CLOUD_COUNT; i++) {
   natureBg.appendChild(cloud);
 }
 
-const birdSvg = `<svg width="26" height="14" viewBox="0 0 26 14"><path d="M0 7 Q6 -3 13 6 Q20 -3 26 7 Q20 3 13 8 Q6 3 0 7Z" fill="#8a7f96" opacity="0.6"/></svg>`;
-const BIRD_COUNT = 3;
+const birdSvg = `<svg width="32" height="17" viewBox="0 0 26 14"><path d="M0 7 Q6 -3 13 6 Q20 -3 26 7 Q20 3 13 8 Q6 3 0 7Z" fill="#7d7189" opacity="0.75"/></svg>`;
+const BIRD_COUNT = 4;
 for (let i = 0; i < BIRD_COUNT; i++) {
   const bird = document.createElement('div');
   bird.className = 'bird';
   bird.innerHTML = birdSvg;
   bird.style.top = `${8 + Math.random() * 35}%`;
-  const duration = 22 + Math.random() * 14;
+  const duration = 15 + Math.random() * 8;
   bird.style.animationDuration = `${duration}s`;
-  bird.style.animationDelay = `${Math.random() * 40}s`;
+  // stagger so the first bird crosses within a few seconds, not up to 40s later
+  bird.style.animationDelay = `${i * 4 + Math.random() * 3}s`;
   natureBg.appendChild(bird);
 }
 
-// ---------- ambient nature soundscape: soft breeze + birdsong ----------
+// ---------- generative old-soul instrumental ----------
+// Not a real recording (no rights-clear way to embed one here) — a small
+// self-composed Rhodes-style chord loop with soft bass and vinyl crackle,
+// synthesized entirely in the browser.
 let audioCtx = null;
 let ambientNodes = null;
-let chirpTimer = null;
+let loopTimer = null;
 let playing = false;
 
 const toggleBtn = document.getElementById('musicToggle');
 const icon = document.getElementById('musicIcon');
 
-function buildNoiseBuffer(ctx) {
-  const length = ctx.sampleRate * 2;
+// ii - V - I - vi, voiced low and warm
+const CHORDS = [
+  { root: 73.42, tones: [220.00, 261.63, 329.63, 392.00] },  // Dm7  (D2 bass)
+  { root: 98.00, tones: [246.94, 293.66, 349.23, 440.00] },  // G7   (G2 bass)
+  { root: 65.41, tones: [196.00, 246.94, 293.66, 369.99] },  // Cmaj7 (C2 bass)
+  { root: 55.00, tones: [164.81, 196.00, 246.94, 329.63] },  // Am7  (A1 bass)
+];
+const CHORD_SECONDS = 3.6;
+
+function buildNoiseBuffer(ctx, seconds) {
+  const length = ctx.sampleRate * seconds;
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
   return buffer;
+}
+
+function rhodesTone(ctx, dest, freq, start, dur, level) {
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.detune.value = 6;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, start);
+  gain.gain.linearRampToValueAtTime(level, start + 0.25);
+  gain.gain.exponentialRampToValueAtTime(Math.max(level * 0.25, 0.0005), start + dur * 0.7);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  osc.frequency.value = freq;
+  osc2.frequency.value = freq;
+  osc.connect(gain);
+  osc2.connect(gain);
+  gain.connect(dest);
+  osc.start(start); osc.stop(start + dur + 0.05);
+  osc2.start(start); osc2.stop(start + dur + 0.05);
 }
 
 function startAmbient() {
@@ -69,80 +102,68 @@ function startAmbient() {
   const master = ctx.createGain();
   master.gain.value = 0;
   master.connect(ctx.destination);
-  master.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 2);
+  master.gain.linearRampToValueAtTime(0.32, ctx.currentTime + 2);
 
-  // soft breeze: filtered noise loop, gently wandering
-  const noise = ctx.createBufferSource();
-  noise.buffer = buildNoiseBuffer(ctx);
-  noise.loop = true;
-  const breezeFilter = ctx.createBiquadFilter();
-  breezeFilter.type = 'bandpass';
-  breezeFilter.frequency.value = 700;
-  breezeFilter.Q.value = 0.6;
-  const breezeLfo = ctx.createOscillator();
-  breezeLfo.frequency.value = 0.06;
-  const breezeLfoGain = ctx.createGain();
-  breezeLfoGain.gain.value = 260;
-  breezeLfo.connect(breezeLfoGain);
-  breezeLfoGain.connect(breezeFilter.frequency);
-  const breezeGain = ctx.createGain();
-  breezeGain.gain.value = 0.35;
-  noise.connect(breezeFilter);
-  breezeFilter.connect(breezeGain);
-  breezeGain.connect(master);
-  noise.start();
-  breezeLfo.start();
+  const warmth = ctx.createBiquadFilter();
+  warmth.type = 'lowpass';
+  warmth.frequency.value = 2200;
+  warmth.connect(master);
 
-  const chirpBus = ctx.createGain();
-  chirpBus.gain.value = 1;
-  chirpBus.connect(master);
+  // vinyl crackle bed: filtered hiss + occasional soft pops
+  const crackleGain = ctx.createGain();
+  crackleGain.gain.value = 0.05;
+  crackleGain.connect(master);
+  const hiss = ctx.createBufferSource();
+  hiss.buffer = buildNoiseBuffer(ctx, 3);
+  hiss.loop = true;
+  const hissFilter = ctx.createBiquadFilter();
+  hissFilter.type = 'highpass';
+  hissFilter.frequency.value = 3500;
+  hiss.connect(hissFilter);
+  hissFilter.connect(crackleGain);
+  hiss.start();
 
-  ambientNodes = { master, noise, breezeLfo, chirpBus };
-
-  function chirp() {
-    const now = audioCtx.currentTime;
-    const base = 2400 + Math.random() * 1400;
-    const notes = 1 + Math.floor(Math.random() * 3);
-    let t = now;
-    for (let n = 0; n < notes; n++) {
-      const osc = audioCtx.createOscillator();
-      osc.type = 'sine';
-      const gain = audioCtx.createGain();
-      const pan = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-      const freq = base * (1 + (Math.random() - 0.5) * 0.3);
-      osc.frequency.setValueAtTime(freq * 0.7, t);
-      osc.frequency.exponentialRampToValueAtTime(freq, t + 0.05);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.85, t + 0.13);
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.06, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-      osc.connect(gain);
-      if (pan) {
-        pan.pan.value = Math.random() * 1.6 - 0.8;
-        gain.connect(pan);
-        pan.connect(chirpBus);
-      } else {
-        gain.connect(chirpBus);
-      }
-      osc.start(t);
-      osc.stop(t + 0.2);
-      t += 0.14 + Math.random() * 0.08;
-    }
-    chirpTimer = setTimeout(chirp, 2500 + Math.random() * 5500);
+  let popTimer;
+  function pop() {
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = buildNoiseBuffer(ctx, 0.03);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.06, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+    src.connect(g);
+    g.connect(master);
+    src.start(t);
+    popTimer = setTimeout(pop, 300 + Math.random() * 900);
   }
-  chirpTimer = setTimeout(chirp, 1200);
+  popTimer = setTimeout(pop, 200);
+
+  ambientNodes = { master, hiss, popTimer: () => popTimer };
+
+  let chordIndex = 0;
+  function playChord() {
+    const t = ctx.currentTime;
+    const chord = CHORDS[chordIndex % CHORDS.length];
+    // soft plucked bass root
+    rhodesTone(ctx, warmth, chord.root, t, CHORD_SECONDS * 0.9, 0.09);
+    // warm upper voicing
+    chord.tones.forEach((freq, i) => {
+      rhodesTone(ctx, warmth, freq, t + 0.02 * i, CHORD_SECONDS, 0.045);
+    });
+    chordIndex++;
+    loopTimer = setTimeout(playChord, CHORD_SECONDS * 1000);
+  }
+  playChord();
 }
 
 function stopAmbient() {
   if (!audioCtx || !ambientNodes) return;
   const ctx = audioCtx;
-  const { master, noise, breezeLfo } = ambientNodes;
+  const { master, hiss } = ambientNodes;
   master.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
-  clearTimeout(chirpTimer);
-  setTimeout(() => {
-    noise.stop();
-    breezeLfo.stop();
-  }, 1100);
+  clearTimeout(loopTimer);
+  clearTimeout(ambientNodes.popTimer());
+  setTimeout(() => { hiss.stop(); }, 1100);
   ambientNodes = null;
 }
 
@@ -152,13 +173,13 @@ toggleBtn.addEventListener('click', () => {
     startAmbient();
     icon.textContent = '⏸';
     toggleBtn.classList.add('playing');
-    toggleBtn.setAttribute('aria-label', 'Pause ambient sound');
-    toggleBtn.title = 'Pause ambient sound';
+    toggleBtn.setAttribute('aria-label', 'Pause instrumental');
+    toggleBtn.title = 'Pause instrumental';
   } else {
     stopAmbient();
     icon.textContent = '🎵';
     toggleBtn.classList.remove('playing');
-    toggleBtn.setAttribute('aria-label', 'Play ambient sound');
-    toggleBtn.title = 'Play ambient sound';
+    toggleBtn.setAttribute('aria-label', 'Play instrumental');
+    toggleBtn.title = 'Play instrumental';
   }
 });
