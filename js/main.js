@@ -32,7 +32,15 @@ for (let i = 0; i < CLOUD_COUNT; i++) {
   natureBg.appendChild(cloud);
 }
 
-const birdSvg = `<svg width="32" height="17" viewBox="0 0 26 14"><path d="M0 7 Q6 -3 13 6 Q20 -3 26 7 Q20 3 13 8 Q6 3 0 7Z" fill="#7d7189" opacity="0.75"/></svg>`;
+// side profile, facing right (direction of flight): body + head + beak + tail,
+// with a separate wing shape that rotates independently for the flap.
+const birdSvg = `<svg width="34" height="22" viewBox="0 0 34 22">
+  <path d="M4 15 L9 12.5 L4.5 11.5 Z" fill="#7d7189" opacity="0.8"/>
+  <ellipse cx="16" cy="13" rx="10" ry="4.6" fill="#7d7189" opacity="0.8"/>
+  <circle cx="26" cy="9.5" r="3" fill="#7d7189" opacity="0.8"/>
+  <path d="M28.6 9 L33 8.3 L28.8 10.4 Z" fill="#7d7189" opacity="0.8"/>
+  <path class="wing" d="M18 11 Q13 -1 5 3 Q13 6 20 13 Z" fill="#7d7189" opacity="0.85"/>
+</svg>`;
 const BIRD_COUNT = 4;
 for (let i = 0; i < BIRD_COUNT; i++) {
   const bird = document.createElement('div');
