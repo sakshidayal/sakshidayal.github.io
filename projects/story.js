@@ -109,18 +109,26 @@ function el(tag, attrs) {
 })();
 
 /* ---------------------------------------------------------------------
-   shared: a bistable parallelogram unit (the actual mechanism from the
-   thesis — two hinged verticals + a torsional spring at the base) that
-   damps toward an alternating target angle, forever.
+   shared: a bistable TOGGLE SWITCH — a pivoted handle plus an off-center
+   spring, the classic "over-center" mechanism behind every real snap
+   switch. Same underlying idea as the thesis's spring-biased
+   parallelogram, drawn as the thing everyone has actually flipped.
    --------------------------------------------------------------------- */
-function springPath(x, y, scale) {
-  const w = 9 * scale, h = 4 * scale;
-  let d = `M ${x - w} ${y}`;
-  for (let i = 0; i < 5; i++) {
-    const sx = x - w + (w * 2 * (i + 1)) / 5;
-    const sy = y + (i % 2 === 0 ? -h : h);
-    d += ` L ${sx.toFixed(1)} ${sy.toFixed(1)}`;
+function zigzagBetween(p0, p1, scale) {
+  const segs = 6;
+  const dx = p1.x - p0.x, dy = p1.y - p0.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const px = -uy, py = ux;
+  const amp = 3 * scale;
+  let d = `M ${p0.x.toFixed(1)} ${p0.y.toFixed(1)}`;
+  for (let i = 1; i < segs; i++) {
+    const t = i / segs;
+    const bx = p0.x + dx * t, by = p0.y + dy * t;
+    const s = i % 2 === 0 ? 1 : -1;
+    d += ` L ${(bx + px * amp * s).toFixed(1)} ${(by + py * amp * s).toFixed(1)}`;
   }
+  d += ` L ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
   return d;
 }
 
@@ -128,26 +136,33 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
   const g = el('g', {});
   svg.appendChild(g);
 
-  const bw = 26 * scale, L = 58 * scale;
-  const P1 = { x: x - bw, y }, P2 = { x: x + bw, y };
+  const Wh = 46 * scale, Hh = 40 * scale, Lh = 46 * scale;
+  const P0 = { x, y };
+  const housing = el('rect', {
+    x: x - Wh / 2, y: y, width: Wh, height: Hh, rx: 8 * scale,
+    fill: '#fff', stroke: '#8a7f96', 'stroke-width': 3,
+  });
+  const anchor = { x, y: y + Hh * 0.62 };
+  const anchorDot = el('circle', { cx: anchor.x, cy: anchor.y, r: 3, fill: '#8a7f96' });
 
-  const base = el('line', { x1: P1.x, y1: P1.y, x2: P2.x, y2: P2.y, stroke: '#8a7f96', 'stroke-width': 5, 'stroke-linecap': 'round' });
-  const spring = el('path', { d: springPath(x, y + 14 * scale, scale), fill: 'none', stroke: '#8a7f96', 'stroke-width': 2, 'stroke-linecap': 'round' });
-  const left = el('line', { stroke: color, 'stroke-width': 5, 'stroke-linecap': 'round' });
-  const right = el('line', { stroke: color, 'stroke-width': 5, 'stroke-linecap': 'round' });
-  const top = el('line', { stroke: '#5b5468', 'stroke-width': 5, 'stroke-linecap': 'round' });
-  const dots = [P1, P2].map((p) => el('circle', { cx: p.x, cy: p.y, r: 3.5, fill: '#5b5468' }));
-  const dotsTop = [0, 1].map(() => el('circle', { r: 3.5, fill: '#5b5468' }));
+  const thetaMax = (thetaMaxDeg * Math.PI) / 180;
+  const tipAt = (ang) => ({ x: P0.x + Lh * Math.sin(ang), y: P0.y - Lh * Math.cos(ang) });
+  const contactPos = [tipAt(-thetaMax), tipAt(thetaMax)];
+  const contacts = contactPos.map((p) => el('circle', { cx: p.x, cy: p.y, r: 5 * scale, fill: '#e8e0d3', stroke: '#8a7f96', 'stroke-width': 1.5 }));
 
-  [spring, base, left, right, top, ...dots, ...dotsTop].forEach((n) => g.appendChild(n));
+  const spring = el('path', { fill: 'none', stroke: '#8a7f96', 'stroke-width': 2, 'stroke-linecap': 'round' });
+  const handle = el('line', { stroke: color, 'stroke-width': 6, 'stroke-linecap': 'round' });
+  const knob = el('circle', { r: 6 * scale, fill: color, stroke: '#5b5468', 'stroke-width': 1.5 });
+  const pivotDot = el('circle', { cx: P0.x, cy: P0.y, r: 3.5, fill: '#5b5468' });
+
+  [housing, ...contacts, anchorDot, spring, handle, knob, pivotDot].forEach((n) => g.appendChild(n));
 
   if (label) {
-    const t = el('text', { x, y: y - L - 16 * scale, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 15 * scale, fill: '#5b5468' });
+    const t = el('text', { x, y: y - Lh - 14 * scale, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 15 * scale, fill: '#5b5468' });
     t.textContent = label;
     g.appendChild(t);
   }
 
-  const thetaMax = (thetaMaxDeg * Math.PI) / 180;
   let angle = -thetaMax, vel = 0, target = -thetaMax, timer = Math.random() * period;
 
   function step(dt) {
@@ -158,17 +173,18 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
     vel += acc * dt;
     angle += vel * dt;
 
-    const dx = L * Math.sin(angle), dy = -L * Math.cos(angle);
-    const P3 = { x: P1.x + dx, y: P1.y + dy };
-    const P4 = { x: P2.x + dx, y: P2.y + dy };
-    left.setAttribute('x1', P1.x); left.setAttribute('y1', P1.y);
-    left.setAttribute('x2', P3.x); left.setAttribute('y2', P3.y);
-    right.setAttribute('x1', P2.x); right.setAttribute('y1', P2.y);
-    right.setAttribute('x2', P4.x); right.setAttribute('y2', P4.y);
-    top.setAttribute('x1', P3.x); top.setAttribute('y1', P3.y);
-    top.setAttribute('x2', P4.x); top.setAttribute('y2', P4.y);
-    dotsTop[0].setAttribute('cx', P3.x); dotsTop[0].setAttribute('cy', P3.y);
-    dotsTop[1].setAttribute('cx', P4.x); dotsTop[1].setAttribute('cy', P4.y);
+    const tip = tipAt(angle);
+    handle.setAttribute('x1', P0.x); handle.setAttribute('y1', P0.y);
+    handle.setAttribute('x2', tip.x); handle.setAttribute('y2', tip.y);
+    knob.setAttribute('cx', tip.x); knob.setAttribute('cy', tip.y);
+
+    const springEnd = { x: P0.x + Lh * 0.5 * Math.sin(angle), y: P0.y - Lh * 0.5 * Math.cos(angle) };
+    spring.setAttribute('d', zigzagBetween(anchor, springEnd, scale));
+
+    contacts.forEach((c, i) => {
+      const active = (i === 0 && target < 0) || (i === 1 && target > 0);
+      c.setAttribute('fill', active ? color : '#e8e0d3');
+    });
   }
 
   // 0 = fully at -thetaMax, 1 = fully at +thetaMax
@@ -186,10 +202,10 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
   if (!svg) return;
   svg.setAttribute('viewBox', '0 0 300 200');
 
-  svg.appendChild(el('text', { x: 65, y: 185, 'text-anchor': 'middle', 'font-size': 13, fill: '#837c8f', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700 })).textContent = '−θ₀';
-  svg.appendChild(el('text', { x: 235, y: 185, 'text-anchor': 'middle', 'font-size': 13, fill: '#837c8f', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700 })).textContent = '+θ₀';
+  svg.appendChild(el('text', { x: 124, y: 26, 'text-anchor': 'middle', 'font-size': 13, fill: '#837c8f', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700 })).textContent = '−θ₀';
+  svg.appendChild(el('text', { x: 176, y: 26, 'text-anchor': 'middle', 'font-size': 13, fill: '#837c8f', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700 })).textContent = '+θ₀';
 
-  const unit = makeBistableSwitch(svg, { x: 150, y: 150, scale: 1.5, thetaMaxDeg: 22, period: 3.4, color: '#e39aab' });
+  const unit = makeBistableSwitch(svg, { x: 150, y: 110, scale: 1.5, thetaMaxDeg: 22, period: 3.4, color: '#e39aab' });
 
   let last = null;
   function frame(t) {
