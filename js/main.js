@@ -32,14 +32,16 @@ for (let i = 0; i < CLOUD_COUNT; i++) {
   natureBg.appendChild(cloud);
 }
 
-// side profile, facing right (direction of flight): body + head + beak + tail,
-// with a separate wing shape that rotates independently for the flap.
+// side profile, facing right (direction of flight): rounded body + head +
+// beak + tail, with one sleek swept-wing crescent on top that rotates
+// independently for the flap — a minimal-bird-icon silhouette (original
+// shape, not traced from any trademarked logo).
 const birdSvg = `<svg width="34" height="22" viewBox="0 0 34 22">
   <path d="M4 15 L9 12.5 L4.5 11.5 Z" fill="#7d7189" opacity="0.8"/>
   <ellipse cx="16" cy="13" rx="10" ry="4.6" fill="#7d7189" opacity="0.8"/>
   <circle cx="26" cy="9.5" r="3" fill="#7d7189" opacity="0.8"/>
   <path d="M28.6 9 L33 8.3 L28.8 10.4 Z" fill="#7d7189" opacity="0.8"/>
-  <path class="wing" d="M18 11 Q13 -1 5 3 Q13 6 20 13 Z" fill="#7d7189" opacity="0.85"/>
+  <path class="wing" d="M20 12 C 16 1 4 -1 -1 6 C 6 5 15 9 20 12 Z" fill="#7d7189" opacity="0.9"/>
 </svg>`;
 const BIRD_COUNT = 4;
 for (let i = 0; i < BIRD_COUNT; i++) {
