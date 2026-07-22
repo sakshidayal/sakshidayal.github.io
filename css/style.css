@@ -526,43 +526,20 @@ footer a { color: var(--pink-dark); text-decoration: none; }
   margin-top: 8px;
 }
 
-.finding-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-.finding-list li {
-  background: var(--card);
-  border-radius: 20px;
-  padding: 16px 20px 16px 50px;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-}
-.finding-list li::before {
-  content: '✦';
-  position: absolute;
-  left: 18px;
-  top: 16px;
-  color: var(--pink-dark);
-}
-
-.well-panel { text-align: center; }
-.well-panel svg { width: 100%; max-width: 460px; height: auto; cursor: pointer; touch-action: none; }
-.well-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 18px; }
-.well-controls .btn { font-size: .85rem; padding: 9px 16px; }
-.well-readout {
-  margin-top: 14px;
+.story-lede {
   font-family: 'Quicksand', sans-serif;
-  font-weight: 700;
-  color: var(--mint-dark);
-  min-height: 1.4em;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--text);
+  max-width: 640px;
 }
-.well-hint { color: var(--text-soft); font-size: .9rem; margin-top: 4px; }
 
-.implications-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+.mech-panel { text-align: center; }
+.mech-panel p { text-align: left; max-width: 640px; margin: 0 auto 18px; }
+.mech-panel svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
-.implications-grid .panel h3 { font-size: 1.1rem; margin-bottom: 8px; }
-.implications-grid .panel p { font-size: .95rem; }
-
-.extension-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.extension-list li { padding-left: 30px; position: relative; }
-.extension-list li::before { content: '🌱'; position: absolute; left: 0; top: 0; }
