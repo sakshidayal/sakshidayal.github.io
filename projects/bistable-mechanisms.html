@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multibody Dynamics of Bistable Mechanisms — Sakshi Dayal</title>
+<meta name="description" content="A closer look at Sakshi Dayal's B.Tech thesis on simulating planar linkage mechanisms and bistable mechanical logic, IIT Bombay.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%23dcecff%22/><circle cx=%2250%22 cy=%2250%22 r=%2224%22 fill=%22%23f4c6d0%22/></svg>">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="nature-bg" id="natureBg" aria-hidden="true">
+  <div class="hills back"></div>
+  <div class="hills"></div>
+</div>
+
+<nav class="navbar">
+  <div class="wrap">
+    <a href="../index.html#top" class="brand">sakshi<span>.</span></a>
+    <ul class="navlinks">
+      <li><a href="../index.html#projects">All projects</a></li>
+      <li><a href="../index.html#contact">Contact</a></li>
+    </ul>
+  </div>
+</nav>
+
+<main>
+
+<header class="detail-hero">
+  <div class="wrap">
+    <a class="back-link" href="../index.html#projects">&larr; back to projects</a>
+    <p class="kicker">project 08</p>
+    <h1>Multibody Dynamics of Bistable Mechanisms</h1>
+    <p class="detail-meta">B.Tech Thesis · Aerospace Engineering, IIT Bombay · Guide: Prof. Amuthan A. Ramabathiran · 2020–2021</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap reveal">
+    <div class="panel about-panel">
+      <p>
+        The short version: I built Python simulators for how linkage
+        mechanisms move under forces — first with the Direct Stiffness
+        Method (elastic links), then with Lagrangian mechanics (rigid
+        links). I used them to simulate Theo Jansen's famous walking
+        linkage, then built a mathematical model of bistability (a system
+        with two stable resting states) and used it to make a
+        parallelogram mechanism that behaves like a tiny mechanical
+        "neuron" — one that adds two numbers using nothing but geometry,
+        springs, and hinges.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="findings">
+  <div class="wrap reveal">
+    <p class="kicker">fun findings</p>
+    <h2 class="section-title">Things That Surprised Me</h2>
+    <ul class="finding-list">
+      <li>A simple hinged parallelogram has <em>infinite</em> equilibrium shapes — it just flops into whatever skew you last pushed it to. Bracing it with one diagonal link kills that extra freedom entirely, and it snaps back to its original shape every time.</li>
+      <li>With zero damping, the simulation oscillated forever at constant amplitude, exactly as the math predicted — a satisfying sanity check that the solver conserved energy correctly before I added any damping.</li>
+      <li>A single parallelogram with a torsional spring will "pick a side" — settling at either +θ₀ or −θ₀ depending on which way it's nudged. That's a bistable switch made entirely of bars and a spring.</li>
+      <li>Chaining two of those switches together and tuning their spring stiffnesses as weights produced a working mechanical adder: it computed <code>0.4·A + 0.6·B</code> using nothing electronic — just geometry and stored elastic energy.</li>
+      <li>The adder wasn't perfect — the Lagrange multipliers used to enforce the closed-loop constraint introduced small tracking errors, visible as a stray point in the output plots. A good reminder that constrained multibody solvers need care at the joints.</li>
+      <li>Simulated the Jansen linkage — the same 11-bar mechanism behind Theo Jansen's kinetic <em>Strandbeesten</em> sculptures — and traced the exact path its "foot" carves through the air.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap reveal">
+    <p class="kicker">try it</p>
+    <h2 class="section-title">The Double-Well Model, Live</h2>
+    <div class="panel well-panel">
+      <p>
+        This is the actual shape of the bistability model from the thesis:
+        two potential wells centered at x = −1 and x = +1, separated by an
+        energy barrier at x = 0. Click anywhere on the curve to drop a
+        ball there and watch it roll and settle — a small, damped
+        simulation of exactly that system.
+      </p>
+      <svg id="wellSvg" viewBox="0 0 440 220" aria-label="Interactive double-well potential diagram">
+        <path id="wellCurve" fill="none" stroke="#b9a4e0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle id="wellBall" r="9" fill="#e39aab"/>
+      </svg>
+      <div class="well-controls">
+        <button class="btn btn-pink" id="wellLeft">Release near left well</button>
+        <button class="btn btn-butter" id="wellCenter">Release at the barrier</button>
+        <button class="btn btn-lav" id="wellRight">Release near right well</button>
+      </div>
+      <p class="well-readout" id="wellReadout">Click the curve, or use a button above.</p>
+      <p class="well-hint">Notice how releasing exactly at the barrier is unstable — the tiniest nudge decides which well it falls into.</p>
+    </div>
+  </div>
+</section>
+
+<section id="implications">
+  <div class="wrap reveal">
+    <p class="kicker">why it matters</p>
+    <h2 class="section-title">Implications</h2>
+    <div class="implications-grid">
+      <div class="panel">
+        <h3>Computing without electronics</h3>
+        <p>The adder performs real arithmetic using only stored elastic energy and geometry — relevant wherever electronics are impractical: extreme temperatures, radiation, or fully passive/soft robotic systems.</p>
+      </div>
+      <div class="panel">
+        <h3>Mechanical metamaterials</h3>
+        <p>Bistable linkage units are a building block for structures whose behavior comes from their geometry rather than their material — programmable, reconfigurable, shape-morphing designs like auxetic or deployable structures.</p>
+      </div>
+      <div class="panel">
+        <h3>A direct line to my day job</h3>
+        <p>Constrained rigid-body kinematics, Jacobians, closed-loop solving — the exact same problem class as the scenegraph and rigid-body transforms I now work on for exploded views in production CAD software.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="extensions">
+  <div class="wrap reveal">
+    <p class="kicker">further extension</p>
+    <h2 class="section-title">Where This Could Go</h2>
+    <div class="panel">
+      <ul class="extension-list">
+        <li>Tighten the closed-loop constraint solver to remove the small Lagrange-multiplier tracking error, for cleaner logic-gate outputs.</li>
+        <li>Validate the simulated bistable "neuron" against a physically fabricated model.</li>
+        <li>Extend the proportional adder toward full mechanical logic gates (AND / OR / NOT) built from linked bistable units — a step toward purely mechanical computation.</li>
+        <li>Chain many bistable units into 2D/3D networks to realize programmable, shape-morphing mechanical metamaterials.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap reveal" style="text-align:center;">
+    <a class="btn btn-mint" href="../index.html#projects">&larr; Back to all projects</a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    © <span id="year"></span> Sakshi Dayal — no clouds were harmed in the making of this site.
+  </div>
+</footer>
+
+<button class="music-toggle" id="musicToggle" aria-label="Play instrumental" title="Play instrumental">
+  <span class="ring"></span>
+  <span id="musicIcon">🎵</span>
+</button>
+
+<script src="../js/main.js"></script>
+<script src="well-demo.js"></script>
+</body>
+</html>
