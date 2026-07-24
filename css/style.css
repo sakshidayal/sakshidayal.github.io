@@ -543,3 +543,4 @@ footer a { color: var(--pink-dark); text-decoration: none; }
   display: block;
   margin: 0 auto;
 }
+.mech-panel svg.wide { max-width: 680px; }

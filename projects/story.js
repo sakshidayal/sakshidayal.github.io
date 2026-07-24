@@ -190,8 +190,9 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
   // 0 = fully at -thetaMax, 1 = fully at +thetaMax
   function value() { return (angle / thetaMax + 1) / 2; }
   function bool() { return target > 0 ? 1 : 0; }
+  function pos() { return tipAt(angle); }
 
-  return { step, value, bool };
+  return { step, value, bool, pos };
 }
 
 /* ---------------------------------------------------------------------
@@ -338,6 +339,144 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
     andRow.update();
     orRow.update();
     notRow.update();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ---------------------------------------------------------------------
+   5) SIX-SWITCH NETWORK — six weighted switches drive (a) a mechanical
+   summing beam and (b) a two-layer AND/OR/XOR logic network, at once.
+   --------------------------------------------------------------------- */
+(function networkDemo() {
+  const svg = document.getElementById('networkSvg');
+  if (!svg) return;
+  svg.setAttribute('viewBox', '0 0 720 560');
+
+  const weights = [0.05, 0.10, 0.15, 0.15, 0.20, 0.35];
+  const periods = [2.3, 2.9, 3.5, 4.1, 4.7, 5.3];
+  const xs = [60, 172, 284, 396, 508, 620];
+  const switchColors = ['#e39aab', '#8fc9a6', '#b9a4e0', '#eec96b', '#e39aab', '#8fc9a6'];
+
+  const switches = xs.map((x, i) => {
+    const s = makeBistableSwitch(svg, { x, y: 30, scale: 0.55, thetaMaxDeg: 24, period: periods[i], color: switchColors[i] });
+    svg.appendChild(el('text', { x, y: 92, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 12, fill: '#5b5468' })).textContent = `I${i + 1}`;
+    svg.appendChild(el('text', { x, y: 106, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 600, 'font-size': 10, fill: '#837c8f' })).textContent = `w=${weights[i]}`;
+    return s;
+  });
+
+  // ---- mechanical summing beam (left) ----
+  const beamCenter = { x: 190, y: 260 };
+  const beamHalf = 150;
+  const pegOffsets = [-150, -90, -30, 30, 90, 150];
+  const maxBeamAngle = (16 * Math.PI) / 180;
+
+  svg.appendChild(el('text', { x: 190, y: 150, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 14, fill: '#5b5468' })).textContent = 'weighted sum, by lever';
+
+  svg.appendChild(el('path', {
+    d: `M ${beamCenter.x - 16} ${beamCenter.y + 40} L ${beamCenter.x + 16} ${beamCenter.y + 40} L ${beamCenter.x} ${beamCenter.y} Z`,
+    fill: '#e8e0d3', stroke: '#8a7f96', 'stroke-width': 2,
+  }));
+
+  const beamLine = el('line', { stroke: '#5b5468', 'stroke-width': 6, 'stroke-linecap': 'round' });
+  svg.appendChild(beamLine);
+  const pushrods = pegOffsets.map(() => el('line', { stroke: '#c9a8b4', 'stroke-width': 2, opacity: 0.8 }));
+  pushrods.forEach((r) => svg.appendChild(r));
+  const pegDots = pegOffsets.map(() => el('circle', { r: 3.5, fill: '#5b5468' }));
+  pegDots.forEach((d) => svg.appendChild(d));
+
+  const readout = el('text', { x: beamCenter.x, y: beamCenter.y + 90, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 15, fill: '#5b5468' });
+  svg.appendChild(readout);
+
+  let beamAngle = 0, beamVel = 0;
+
+  // ---- logic network (right) ----
+  function andGate(cx, cy) {
+    const w = 30, h = 22;
+    return `M ${cx - w / 2} ${cy - h / 2} L ${cx} ${cy - h / 2}
+            A ${h / 2} ${h / 2} 0 0 1 ${cx} ${cy + h / 2}
+            L ${cx - w / 2} ${cy + h / 2} Z`;
+  }
+  function orGate(cx, cy) {
+    const w = 30, h = 22;
+    const x0 = cx - w / 2;
+    return `M ${x0} ${cy - h / 2}
+            Q ${x0 + w * 0.35} ${cy - h / 2} ${cx + w / 2} ${cy}
+            Q ${x0 + w * 0.35} ${cy + h / 2} ${x0} ${cy + h / 2}
+            Q ${x0 + w * 0.22} ${cy} ${x0} ${cy - h / 2} Z`;
+  }
+  function xorGate(cx, cy) {
+    const w = 30, h = 22;
+    const x0 = cx - w / 2;
+    return `M ${x0} ${cy - h / 2}
+            Q ${x0 + w * 0.35} ${cy - h / 2} ${cx + w / 2} ${cy}
+            Q ${x0 + w * 0.35} ${cy + h / 2} ${x0} ${cy + h / 2}
+            Q ${x0 + w * 0.22} ${cy} ${x0} ${cy - h / 2} Z
+            M ${x0 - 5} ${cy - h / 2} Q ${x0 + w * 0.22 - 5} ${cy} ${x0 - 5} ${cy + h / 2}`;
+  }
+
+  function drawGate(cx, cy, pathFn, inputLabel, outLabel, computeFn) {
+    const g = el('g', {});
+    svg.appendChild(g);
+    g.appendChild(el('path', { d: pathFn(cx, cy), fill: '#fff', stroke: '#5b5468', 'stroke-width': 2 }));
+    g.appendChild(el('line', { x1: cx - 34, y1: cy - 6, x2: cx - 14, y2: cy - 6, stroke: '#5b5468', 'stroke-width': 1.6 }));
+    g.appendChild(el('line', { x1: cx - 34, y1: cy + 6, x2: cx - 14, y2: cy + 6, stroke: '#5b5468', 'stroke-width': 1.6 }));
+    g.appendChild(el('line', { x1: cx + 15, y1: cy, x2: cx + 34, y2: cy, stroke: '#5b5468', 'stroke-width': 1.6 }));
+    if (inputLabel) {
+      g.appendChild(el('text', { x: cx - 48, y: cy + 4, 'text-anchor': 'end', 'font-family': 'Quicksand, sans-serif', 'font-weight': 600, 'font-size': 10, fill: '#837c8f' })).textContent = inputLabel;
+    }
+    g.appendChild(el('text', { x: cx, y: cy - 18, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 12, fill: '#5b5468' })).textContent = outLabel;
+    const lamp = el('circle', { cx: cx + 46, cy, r: 7, stroke: '#5b5468', 'stroke-width': 1.4 });
+    g.appendChild(lamp);
+    return { compute: computeFn, update: () => lamp.setAttribute('fill', computeFn() ? '#f6c343' : '#e8e0d3') };
+  }
+
+  svg.appendChild(el('text', { x: 460, y: 300, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 14, fill: '#5b5468' })).textContent = 'a different logic situation';
+
+  const gx1 = 450, gx2 = 555, gx3 = 640;
+  const g1 = drawGate(gx1, 340, andGate, 'I1, I2', 'G1 = I1·I2', () => switches[0].bool() && switches[1].bool());
+  const g2 = drawGate(gx1, 400, orGate, 'I3, I4', 'G2 = I3+I4', () => switches[2].bool() || switches[3].bool());
+  const g3 = drawGate(gx1, 460, xorGate, 'I5, I6', 'G3 = I5⊕I6', () => (switches[4].bool() ? 1 : 0) ^ (switches[5].bool() ? 1 : 0));
+  const mid = drawGate(gx2, 370, andGate, null, 'G1 · G2', () => g1.compute() && g2.compute());
+  const out = drawGate(gx3, 415, orGate, null, 'OUT', () => mid.compute() || g3.compute());
+
+  const wireStyle = { stroke: '#5b5468', 'stroke-width': 1.6 };
+  svg.appendChild(el('line', { x1: gx1 + 34, y1: 340, x2: gx2 - 34, y2: 364, ...wireStyle }));
+  svg.appendChild(el('line', { x1: gx1 + 34, y1: 400, x2: gx2 - 34, y2: 376, ...wireStyle }));
+  svg.appendChild(el('line', { x1: gx2 + 34, y1: 370, x2: gx3 - 34, y2: 409, ...wireStyle }));
+  svg.appendChild(el('line', { x1: gx1 + 34, y1: 460, x2: gx3 - 34, y2: 421, ...wireStyle }));
+
+  let last = null;
+  function frame(t) {
+    if (last === null) last = t;
+    const dt = Math.min((t - last) / 1000, 0.032);
+    last = t;
+    switches.forEach((s) => s.step(dt));
+
+    const weightedSum = switches.reduce((acc, s, i) => acc + weights[i] * s.value(), 0);
+    const targetAngle = (weightedSum - 0.5) * 2 * maxBeamAngle;
+    const k = 10, c = 6;
+    const acc = k * (targetAngle - beamAngle) - c * beamVel;
+    beamVel += acc * dt;
+    beamAngle += beamVel * dt;
+
+    const cosA = Math.cos(beamAngle), sinA = Math.sin(beamAngle);
+    beamLine.setAttribute('x1', beamCenter.x - beamHalf * cosA);
+    beamLine.setAttribute('y1', beamCenter.y - beamHalf * sinA);
+    beamLine.setAttribute('x2', beamCenter.x + beamHalf * cosA);
+    beamLine.setAttribute('y2', beamCenter.y + beamHalf * sinA);
+
+    pegOffsets.forEach((off, i) => {
+      const peg = { x: beamCenter.x + off * cosA, y: beamCenter.y + off * sinA };
+      pegDots[i].setAttribute('cx', peg.x); pegDots[i].setAttribute('cy', peg.y);
+      const tip = switches[i].pos();
+      pushrods[i].setAttribute('x1', tip.x); pushrods[i].setAttribute('y1', tip.y);
+      pushrods[i].setAttribute('x2', peg.x); pushrods[i].setAttribute('y2', peg.y);
+    });
+
+    readout.textContent = `Σ weight·I = ${weightedSum.toFixed(2)}`;
+
+    g1.update(); g2.update(); g3.update(); mid.update(); out.update();
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
