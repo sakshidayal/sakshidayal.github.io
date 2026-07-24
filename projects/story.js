@@ -345,8 +345,11 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
 })();
 
 /* ---------------------------------------------------------------------
-   5) SIX-SWITCH NETWORK — six weighted switches drive (a) a mechanical
-   summing beam and (b) a two-layer AND/OR/XOR logic network, at once.
+   5) SIX-SWITCH NETWORK — six weighted switches drive a mechanical
+   summing beam. Its own tilt (Σ weight·I) is then read three ways by
+   threshold gates: ALL ON, ANY ON, and MAJORITY are literally the same
+   number compared against three different lines — not a separate,
+   unrelated computation.
    --------------------------------------------------------------------- */
 (function networkDemo() {
   const svg = document.getElementById('networkSvg');
@@ -389,8 +392,11 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
   svg.appendChild(readout);
 
   let beamAngle = 0, beamVel = 0;
+  let currentSum = 0;
 
-  // ---- logic network (right) ----
+  // ---- threshold gates (right) — same Σ weight·I, three cutoffs ----
+  // "ALL ON" = AND, "ANY ON" = OR, "MAJORITY" = a plain weighted-threshold
+  // gate: all three are just this one number compared to a line.
   function andGate(cx, cy) {
     const w = 30, h = 22;
     return `M ${cx - w / 2} ${cy - h / 2} L ${cx} ${cy - h / 2}
@@ -405,46 +411,38 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
             Q ${x0 + w * 0.35} ${cy + h / 2} ${x0} ${cy + h / 2}
             Q ${x0 + w * 0.22} ${cy} ${x0} ${cy - h / 2} Z`;
   }
-  function xorGate(cx, cy) {
-    const w = 30, h = 22;
-    const x0 = cx - w / 2;
-    return `M ${x0} ${cy - h / 2}
-            Q ${x0 + w * 0.35} ${cy - h / 2} ${cx + w / 2} ${cy}
-            Q ${x0 + w * 0.35} ${cy + h / 2} ${x0} ${cy + h / 2}
-            Q ${x0 + w * 0.22} ${cy} ${x0} ${cy - h / 2} Z
-            M ${x0 - 5} ${cy - h / 2} Q ${x0 + w * 0.22 - 5} ${cy} ${x0 - 5} ${cy + h / 2}`;
+  function comparatorIcon(cx, cy) {
+    const w = 30, h = 24;
+    return `M ${cx - w / 2} ${cy - h / 2} L ${cx - w / 2} ${cy + h / 2} L ${cx + w / 2} ${cy} Z`;
   }
 
-  function drawGate(cx, cy, pathFn, inputLabel, outLabel, computeFn) {
+  function drawThresholdGate(cx, cy, pathFn, title, thresholdLabel, computeFn) {
     const g = el('g', {});
     svg.appendChild(g);
     g.appendChild(el('path', { d: pathFn(cx, cy), fill: '#fff', stroke: '#5b5468', 'stroke-width': 2 }));
-    g.appendChild(el('line', { x1: cx - 34, y1: cy - 6, x2: cx - 14, y2: cy - 6, stroke: '#5b5468', 'stroke-width': 1.6 }));
-    g.appendChild(el('line', { x1: cx - 34, y1: cy + 6, x2: cx - 14, y2: cy + 6, stroke: '#5b5468', 'stroke-width': 1.6 }));
+    g.appendChild(el('line', { x1: cx - 40, y1: cy, x2: cx - 15, y2: cy, stroke: '#5b5468', 'stroke-width': 1.6 }));
     g.appendChild(el('line', { x1: cx + 15, y1: cy, x2: cx + 34, y2: cy, stroke: '#5b5468', 'stroke-width': 1.6 }));
-    if (inputLabel) {
-      g.appendChild(el('text', { x: cx - 48, y: cy + 4, 'text-anchor': 'end', 'font-family': 'Quicksand, sans-serif', 'font-weight': 600, 'font-size': 10, fill: '#837c8f' })).textContent = inputLabel;
-    }
-    g.appendChild(el('text', { x: cx, y: cy - 18, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 12, fill: '#5b5468' })).textContent = outLabel;
+    g.appendChild(el('text', { x: cx, y: cy - 20, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 12, fill: '#5b5468' })).textContent = title;
+    g.appendChild(el('text', { x: cx, y: cy + 30, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 600, 'font-size': 10, fill: '#837c8f' })).textContent = thresholdLabel;
     const lamp = el('circle', { cx: cx + 46, cy, r: 7, stroke: '#5b5468', 'stroke-width': 1.4 });
     g.appendChild(lamp);
-    return { compute: computeFn, update: () => lamp.setAttribute('fill', computeFn() ? '#f6c343' : '#e8e0d3') };
+    return { update: () => lamp.setAttribute('fill', computeFn() ? '#f6c343' : '#e8e0d3') };
   }
 
-  svg.appendChild(el('text', { x: 460, y: 300, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 14, fill: '#5b5468' })).textContent = 'a different logic situation';
+  const minWeight = Math.min(...weights);
+  svg.appendChild(el('text', { x: 555, y: 285, 'text-anchor': 'middle', 'font-family': 'Quicksand, sans-serif', 'font-weight': 700, 'font-size': 14, fill: '#5b5468' })).textContent = 'the same Σ weight·I, three thresholds';
 
-  const gx1 = 450, gx2 = 555, gx3 = 640;
-  const g1 = drawGate(gx1, 340, andGate, 'I1, I2', 'G1 = I1·I2', () => switches[0].bool() && switches[1].bool());
-  const g2 = drawGate(gx1, 400, orGate, 'I3, I4', 'G2 = I3+I4', () => switches[2].bool() || switches[3].bool());
-  const g3 = drawGate(gx1, 460, xorGate, 'I5, I6', 'G3 = I5⊕I6', () => (switches[4].bool() ? 1 : 0) ^ (switches[5].bool() ? 1 : 0));
-  const mid = drawGate(gx2, 370, andGate, null, 'G1 · G2', () => g1.compute() && g2.compute());
-  const out = drawGate(gx3, 415, orGate, null, 'OUT', () => mid.compute() || g3.compute());
+  const gx = 555;
+  const gAll = drawThresholdGate(gx, 340, andGate, 'ALL SIX ON', 'sum ≥ 1.00', () => currentSum >= 0.995);
+  const gAny = drawThresholdGate(gx, 415, orGate, 'ANY ONE ON', `sum ≥ ${minWeight.toFixed(2)}`, () => currentSum >= minWeight - 0.01);
+  const gMaj = drawThresholdGate(gx, 490, comparatorIcon, 'MAJORITY', 'sum ≥ 0.50', () => currentSum >= 0.5);
 
-  const wireStyle = { stroke: '#5b5468', 'stroke-width': 1.6 };
-  svg.appendChild(el('line', { x1: gx1 + 34, y1: 340, x2: gx2 - 34, y2: 364, ...wireStyle }));
-  svg.appendChild(el('line', { x1: gx1 + 34, y1: 400, x2: gx2 - 34, y2: 376, ...wireStyle }));
-  svg.appendChild(el('line', { x1: gx2 + 34, y1: 370, x2: gx3 - 34, y2: 409, ...wireStyle }));
-  svg.appendChild(el('line', { x1: gx1 + 34, y1: 460, x2: gx3 - 34, y2: 421, ...wireStyle }));
+  const busX = 400;
+  [340, 415, 490].forEach((cy) => {
+    svg.appendChild(el('line', { x1: busX, y1: 300, x2: busX, y2: cy, stroke: '#c9a8b4', 'stroke-width': 1.4, opacity: 0.7 }));
+    svg.appendChild(el('line', { x1: busX, y1: cy, x2: gx - 40, y2: cy, stroke: '#c9a8b4', 'stroke-width': 1.4, opacity: 0.7 }));
+  });
+  svg.appendChild(el('circle', { cx: busX, cy: 300, r: 3, fill: '#8a7f96' }));
 
   let last = null;
   function frame(t) {
@@ -454,6 +452,7 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
     switches.forEach((s) => s.step(dt));
 
     const weightedSum = switches.reduce((acc, s, i) => acc + weights[i] * s.value(), 0);
+    currentSum = weightedSum;
     const targetAngle = (weightedSum - 0.5) * 2 * maxBeamAngle;
     const k = 10, c = 6;
     const acc = k * (targetAngle - beamAngle) - c * beamVel;
@@ -476,7 +475,7 @@ function makeBistableSwitch(svg, { x, y, scale = 1, thetaMaxDeg, period, color, 
 
     readout.textContent = `Σ weight·I = ${weightedSum.toFixed(2)}`;
 
-    g1.update(); g2.update(); g3.update(); mid.update(); out.update();
+    gAll.update(); gAny.update(); gMaj.update();
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

@@ -122,15 +122,16 @@
     <h2 class="section-title">Six Switches, One Network</h2>
     <div class="panel mech-panel">
       <p>
-        The same idea, bigger: six switches (I1–I6), each wired two ways
-        at once. Every switch pushes a rod onto a pivoted beam at a point
-        spaced by its own weight — a mechanical balance computing
-        <code>Σ weight·input</code> entirely through geometry. The same six
-        switches also feed a small logic network — AND, OR, and XOR
-        combining across two layers into one final output — a deeper,
-        mixed-gate situation than the single row above.
+        The same idea, bigger: six switches (I1–I6), each pushing a rod onto
+        a pivoted beam at a point spaced by its own weight — a mechanical
+        balance computing <code>Σ weight·input</code> entirely through
+        geometry. Logic gates aren't a separate trick bolted on afterward —
+        they're the same number read differently. "All six on" is just that
+        sum reaching 1.00; "any one on" is it clearing the smallest weight;
+        a plain majority vote is it crossing 0.50. One beam, three lines
+        drawn across it.
       </p>
-      <svg id="networkSvg" viewBox="0 0 720 560" class="wide" aria-label="Six weighted bistable switches driving a mechanical summing beam and a two-layer AND/OR/XOR logic network"></svg>
+      <svg id="networkSvg" viewBox="0 0 720 560" class="wide" aria-label="Six weighted bistable switches driving a mechanical summing beam, whose weighted sum is read by three threshold gates: all on, any on, and majority"></svg>
     </div>
   </div>
 </section>
